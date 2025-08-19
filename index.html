@@ -322,7 +322,8 @@
 
         function checkQuizAnswer(selectedIndex) {
             if (quizAnswered) return;
-            
+            saveProgress();
+
             const question = quizQuestions[currentQuiz];
             const options = document.querySelectorAll('#current-quiz-options .quiz-option');
             const feedback = document.getElementById('quiz-feedback');
@@ -369,6 +370,8 @@
         }
 
         function showScenarioFeedback(scenario, option) {
+            saveProgress();
+
             const feedback = document.getElementById(`feedback${scenario}`);
             userProgress.scenariosExplored++;
             
@@ -416,6 +419,20 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateProgress();
         });
+
+        // 🔹 Salvar progresso no navegador
+function saveProgress() {
+    localStorage.setItem("userProgress", JSON.stringify(userProgress));
+}
+
+// 🔹 Carregar progresso salvo
+function loadProgress() {
+    const saved = localStorage.getItem("userProgress");
+    if (saved) {
+        userProgress = JSON.parse(saved);
+    }
+}
+
     </script>
 </body>
 </html>
