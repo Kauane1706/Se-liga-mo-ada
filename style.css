@@ -320,6 +320,7 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    pointer-events: auto; /* Garante que o modal seja clicável */
 }
 
 .modal-content {
@@ -330,6 +331,7 @@ body {
     max-width: 500px;
     width: 90%;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    pointer-events: auto; /* Garante que o conteúdo do modal seja clicável */
 }
 
 .modal-content h2 {
@@ -370,6 +372,7 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     width: 100%;
+    pointer-events: auto; /* Garante que o botão seja clicável */
 }
 
 .start-button:hover {
