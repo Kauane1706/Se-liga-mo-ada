@@ -7,10 +7,21 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Modal para capturar nome do usuário -->
+    <div id="userModal" class="user-input-modal">
+        <div class="modal-content">
+            <h2>🤝 Bem-vindo!</h2>
+            <p>Antes de começar, nos conte seu nome para personalizar sua experiência e acompanhar seu progresso:</p>
+            <input type="text" id="userName" class="user-input" placeholder="Digite seu nome aqui..." maxlength="50">
+            <button onclick="startApp()" class="start-button">Começar Jornada! 🚀</button>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1>🤝 Relações Respeitosas</h1>
             <p>Construindo um mundo sem violência através do respeito e igualdade</p>
+            <div class="user-welcome" id="userWelcome" style="display: none;"></div>
         </div>
 
         <div class="navigation">
@@ -19,12 +30,20 @@
             <button class="nav-button" onclick="showSection('quiz')">🧠 Quiz</button>
             <button class="nav-button" onclick="showSection('scenarios')">🎭 Cenários</button>
             <button class="nav-button" onclick="showSection('workplace')">💼 Trabalho</button>
+            <button class="nav-button" onclick="showSection('ranking')">🏆 Ranking</button>
             <button class="nav-button" onclick="showSection('resources')">📞 Recursos</button>
         </div>
 
         <div id="home" class="content-section active">
-            <h2>🌟 Bem-vindx ao seu espaço de aprendizado!</h2>
+            <h2>🌟 Bem-vindo ao seu espaço de aprendizado!</h2>
             <p>Este aplicativo foi criado para ajudar jovens a construir relações mais saudáveis e respeitosas, combatendo a violência de gênero e intrafamiliar.</p>
+            
+            <div class="user-stats">
+                <h3>📊 Suas Estatísticas</h3>
+                <p><strong>Pontuação Total:</strong> <span id="userTotalScore">0</span> pontos</p>
+                <p><strong>Quiz Completados:</strong> <span id="userQuizCount">0</span></p>
+                <p><strong>Posição no Ranking:</strong> <span id="userRankPosition">-</span></p>
+            </div>
             
             <div class="stats">
                 <div class="stat-card">
@@ -90,6 +109,7 @@
 
         <div id="quiz" class="content-section">
             <h2>🧠 Teste Seus Conhecimentos</h2>
+            <p style="text-align: center; margin-bottom: 20px;">Cada resposta correta vale <strong>10 pontos</strong>! 🎯</p>
             
             <div class="quiz-container" id="quiz-container">
                 <!-- Quiz será carregado dinamicamente -->
@@ -98,6 +118,7 @@
 
         <div id="scenarios" class="content-section">
             <h2>🎭 Situações do Dia a Dia</h2>
+            <p style="text-align: center; margin-bottom: 20px;">Explore os cenários e ganhe <strong>5 pontos</strong> por situação bem resolvida! ⭐</p>
             
             <div class="scenario">
                 <h3>Situação 1: Festa entre Amigos</h3>
@@ -181,6 +202,24 @@
             </div>
         </div>
 
+        <div id="ranking" class="content-section">
+            <h2>🏆 Ranking de Participantes</h2>
+            
+            <div class="ranking-section">
+                <h3 class="ranking-title">🥇 Top Pontuadores</h3>
+                <div id="rankingList">
+                    <!-- Ranking será carregado dinamicamente -->
+                </div>
+            </div>
+
+            <div class="user-stats">
+                <h3>📈 Estatísticas Globais</h3>
+                <p><strong>Total de Participantes:</strong> <span id="totalParticipants">0</span></p>
+                <p><strong>Pontuação Média:</strong> <span id="averageScore">0</span> pontos</p>
+                <p><strong>Maior Pontuação:</strong> <span id="highestScore">0</span> pontos</p>
+            </div>
+        </div>
+
         <div id="resources" class="content-section">
             <h2>📞 Recursos de Ajuda</h2>
             
@@ -230,6 +269,16 @@
     </div>
 
     <script>
+        // Variáveis globais
+        let currentUser = {
+            name: '',
+            totalScore: 0,
+            quizCompleted: 0,
+            scenariosCompleted: 0,
+            completedQuestions: new Set(),
+            completedScenarios: new Set()
+        };
+
         let userProgress = {
             quizCompleted: 0,
             scenariosExplored: 0,
@@ -269,60 +318,213 @@
                 ],
                 correct: 1,
                 explanation: "O apoio sem julgamentos é fundamental. A pessoa deve tomar suas próprias decisões."
+            },
+            {
+                question: "Qual atitude promove igualdade de gênero no trabalho?",
+                options: [
+                    "Fazer piadas sobre diferenças",
+                    "Ignorar situações de discriminação",
+                    "Apoiar colegas e questionar preconceitos",
+                    "Manter-se neutro sempre"
+                ],
+                correct: 2,
+                explanation: "Apoiar colegas e questionar atitudes discriminatórias é essencial para um ambiente igualitário."
+            },
+            {
+                question: "O que caracteriza uma relação saudável?",
+                options: [
+                    "Controle sobre as atividades do parceiro",
+                    "Respeito mútuo e comunicação aberta",
+                    "Ciúme como prova de amor",
+                    "Dependência emocional total"
+                ],
+                correct: 1,
+                explanation: "Relações saudáveis são baseadas em respeito, confiança e comunicação aberta entre parceiros."
             }
         ];
 
         let currentQuiz = 0;
         let quizAnswered = false;
 
+        // Inicialização do app
+        function startApp() {
+            const nameInput = document.getElementById('userName');
+            const name = nameInput.value.trim();
+            
+            if (name === '') {
+                alert('Por favor, digite seu nome para continuar!');
+                return;
+            }
+            
+            currentUser.name = name;
+            document.getElementById('userModal').style.display = 'none';
+            document.getElementById('userWelcome').innerHTML = `🎉 Olá, <strong>${name}</strong>! Vamos aprender juntos!`;
+            document.getElementById('userWelcome').style.display = 'block';
+            
+            loadUserData();
+            updateAllStats();
+        }
+
+        // Carregar dados do usuário do armazenamento local
+        function loadUserData() {
+            const savedUsers = JSON.parse(sessionStorage.getItem('appUsers') || '{}');
+            
+            if (savedUsers[currentUser.name]) {
+                currentUser = { ...currentUser, ...savedUsers[currentUser.name] };
+                currentUser.completedQuestions = new Set(currentUser.completedQuestions || []);
+                currentUser.completedScenarios = new Set(currentUser.completedScenarios || []);
+            }
+            
+            // Sincronizar com progresso antigo
+            userProgress.quizCompleted = currentUser.quizCompleted;
+            userProgress.scenariosExplored = currentUser.scenariosCompleted;
+        }
+
+        // Salvar dados do usuário
+        function saveUserData() {
+            const savedUsers = JSON.parse(sessionStorage.getItem('appUsers') || '{}');
+            
+            savedUsers[currentUser.name] = {
+                ...currentUser,
+                completedQuestions: Array.from(currentUser.completedQuestions),
+                completedScenarios: Array.from(currentUser.completedScenarios),
+                lastActivity: new Date().toISOString()
+            };
+            
+            sessionStorage.setItem('appUsers', JSON.stringify(savedUsers));
+        }
+
+        // Atualizar todas as estatísticas
+        function updateAllStats() {
+            // Estatísticas do usuário
+            document.getElementById('userTotalScore').textContent = currentUser.totalScore;
+            document.getElementById('userQuizCount').textContent = currentUser.quizCompleted;
+            
+            // Estatísticas de progresso
+            document.getElementById('quiz-stat').textContent = currentUser.quizCompleted;
+            document.getElementById('scenario-stat').textContent = currentUser.scenariosCompleted;
+            
+            // Barra de progresso
+            const totalActions = quizQuestions.length + 3; // 5 quiz + 3 cenários
+            const completed = currentUser.quizCompleted + currentUser.scenariosCompleted;
+            const percentage = Math.min((completed / totalActions) * 100, 100);
+            
+            document.getElementById('main-progress').style.width = percentage + '%';
+            document.getElementById('progress-stat').textContent = Math.round(percentage) + '%';
+            
+            updateRanking();
+        }
+
+        // Atualizar ranking
+        function updateRanking() {
+            const savedUsers = JSON.parse(sessionStorage.getItem('appUsers') || '{}');
+            const userList = Object.values(savedUsers).sort((a, b) => b.totalScore - a.totalScore);
+            
+            const rankingList = document.getElementById('rankingList');
+            const totalParticipants = userList.length;
+            
+            if (totalParticipants === 0) {
+                rankingList.innerHTML = '<p style="text-align: center; color: #666;">Nenhum participante ainda. Seja o primeiro! 🌟</p>';
+                document.getElementById('userRankPosition').textContent = '-';
+                document.getElementById('totalParticipants').textContent = '0';
+                document.getElementById('averageScore').textContent = '0';
+                document.getElementById('highestScore').textContent = '0';
+                return;
+            }
+            
+            // Top 10 do ranking
+            let rankingHTML = '';
+            userList.slice(0, 10).forEach((user, index) => {
+                const isCurrentUser = user.name === currentUser.name;
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+                
+                rankingHTML += `
+                    <div class="ranking-item" style="${isCurrentUser ? 'background: linear-gradient(135deg, #ffd700, #ffed4e); border: 2px solid #f39c12;' : ''}">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="ranking-position">${index + 1}</div>
+                            <span>${medal} ${user.name}${isCurrentUser ? ' (Você)' : ''}</span>
+                        </div>
+                        <div style="font-size: 1.1rem;">
+                            <strong>${user.totalScore} pts</strong>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            rankingList.innerHTML = rankingHTML;
+            
+            // Posição do usuário atual
+            const userPosition = userList.findIndex(user => user.name === currentUser.name) + 1;
+            document.getElementById('userRankPosition').textContent = userPosition > 0 ? `${userPosition}º lugar` : '-';
+            
+            // Estatísticas globais
+            document.getElementById('totalParticipants').textContent = totalParticipants;
+            const averageScore = userList.reduce((sum, user) => sum + user.totalScore, 0) / totalParticipants;
+            document.getElementById('averageScore').textContent = Math.round(averageScore);
+            document.getElementById('highestScore').textContent = userList[0]?.totalScore || 0;
+        }
+
+        // Navegação entre seções
         function showSection(sectionId) {
-            // Esconder todas as seções
             const sections = document.querySelectorAll('.content-section');
             sections.forEach(section => section.classList.remove('active'));
             
-            // Remover classe active de todos os botões
             const buttons = document.querySelectorAll('.nav-button');
             buttons.forEach(button => button.classList.remove('active'));
             
-            // Mostrar seção selecionada
             document.getElementById(sectionId).classList.add('active');
             event.target.classList.add('active');
             
-            // Carregar quiz se necessário
             if (sectionId === 'quiz') {
                 loadQuiz();
+            } else if (sectionId === 'ranking') {
+                updateRanking();
             }
-            
-            updateProgress();
         }
 
+        // Carregar quiz
         function loadQuiz() {
             if (currentQuiz >= quizQuestions.length) {
-                document.getElementById('quiz-container').innerHTML = 
-                    '<div class="scenario"><h3>🎉 Parabéns!</h3><p>Você completou todos os quizzes! Continue explorando as outras seções.</p></div>';
+                document.getElementById('quiz-container').innerHTML = `
+                    <div class="scenario">
+                        <h3>🎉 Parabéns!</h3>
+                        <p>Você completou todos os quizzes!</p>
+                        <p><strong>Sua pontuação:</strong> ${currentUser.totalScore} pontos</p>
+                        <button class="action-button" onclick="resetQuiz()" style="margin-top: 15px;">🔄 Refazer Quiz</button>
+                    </div>
+                `;
                 return;
             }
 
             const question = quizQuestions[currentQuiz];
             const container = document.getElementById('quiz-container');
             
+            // Verificar se já respondeu esta pergunta
+            const alreadyAnswered = currentUser.completedQuestions.has(currentQuiz);
+            
             container.innerHTML = `
-                <div class="quiz-question">${question.question}</div>
+                <div class="quiz-question">
+                    Pergunta ${currentQuiz + 1}/${quizQuestions.length}: ${question.question}
+                    ${alreadyAnswered ? '<div style="background: #28a745; color: white; padding: 5px 10px; border-radius: 5px; display: inline-block; margin-left: 10px; font-size: 0.8rem;">✅ JÁ RESPONDIDA</div>' : ''}
+                </div>
                 <div class="quiz-options" id="current-quiz-options">
                     ${question.options.map((option, index) => 
                         `<div class="quiz-option" onclick="checkQuizAnswer(${index})">${option}</div>`
                     ).join('')}
                 </div>
                 <div id="quiz-feedback" class="feedback"></div>
-                <button class="action-button" onclick="nextQuiz()" id="next-quiz" style="display: none; margin-top: 15px;">Próxima Pergunta</button>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button class="action-button" onclick="nextQuiz()" id="next-quiz" style="display: none;">Próxima Pergunta ➡️</button>
+                    <button class="action-button" onclick="prevQuiz()" style="background: #6c757d; margin-right: 10px;" ${currentQuiz === 0 ? 'style="display: none;"' : ''}>⬅️ Anterior</button>
+                </div>
             `;
             
             quizAnswered = false;
         }
 
+        // Verificar resposta do quiz
         function checkQuizAnswer(selectedIndex) {
             if (quizAnswered) return;
-            saveProgress();
 
             const question = quizQuestions[currentQuiz];
             const options = document.querySelectorAll('#current-quiz-options .quiz-option');
@@ -336,20 +538,44 @@
             feedback.className = selectedIndex === question.correct ? 'feedback positive' : 'feedback negative';
             feedback.style.display = 'block';
             
-            nextButton.style.display = 'block';
+            nextButton.style.display = 'inline-block';
             quizAnswered = true;
             
-            if (selectedIndex === question.correct) {
-                userProgress.quizCompleted++;
-                updateProgress();
+            // Adicionar pontos apenas se acertou e não tinha respondido antes
+            if (selectedIndex === question.correct && !currentUser.completedQuestions.has(currentQuiz)) {
+                currentUser.totalScore += 10;
+                currentUser.quizCompleted++;
+                currentUser.completedQuestions.add(currentQuiz);
+                
+                // Mostrar animação de pontos
+                showPointsAnimation('+10 pontos! 🎉');
+                
+                saveUserData();
+                updateAllStats();
             }
         }
 
+        // Próximo quiz
         function nextQuiz() {
             currentQuiz++;
             loadQuiz();
         }
 
+        // Quiz anterior
+        function prevQuiz() {
+            if (currentQuiz > 0) {
+                currentQuiz--;
+                loadQuiz();
+            }
+        }
+
+        // Resetar quiz
+        function resetQuiz() {
+            currentQuiz = 0;
+            loadQuiz();
+        }
+
+        // Resposta do quiz do ambiente de trabalho
         function checkWorkplaceAnswer(element, isCorrect) {
             const options = document.querySelectorAll('#workplace-quiz .quiz-option');
             const feedback = document.getElementById('workplace-feedback');
@@ -363,36 +589,42 @@
             });
             
             feedback.innerHTML = isCorrect ? 
-                'Excelente! Dar espaço e apoiar colegas é fundamental para um ambiente respeitoso.' :
+                'Excelente! Dar espaço e apoiar colegas é fundamental para um ambiente respeitoso. +5 pontos! 🎯' :
                 'Essa não é a melhor opção. É importante apoiar colegas e promover igualdade.';
             feedback.className = isCorrect ? 'feedback positive' : 'feedback negative';
             feedback.style.display = 'block';
+            
+            if (isCorrect) {
+                currentUser.totalScore += 5;
+                saveUserData();
+                updateAllStats();
+                showPointsAnimation('+5 pontos! ⭐');
+            }
         }
 
+        // Feedback dos cenários
         function showScenarioFeedback(scenario, option) {
-            saveProgress();
-
             const feedback = document.getElementById(`feedback${scenario}`);
-            userProgress.scenariosExplored++;
+            const scenarioKey = `scenario_${scenario}_${option}`;
             
             const responses = {
                 1: {
                     A: { text: "Ignorar não resolve o problema e pode encorajar o comportamento.", positive: false },
                     B: { text: "Confrontar publicamente pode gerar mais conflito. É melhor uma abordagem privada.", positive: false },
-                    C: { text: "Boa escolha! Conversar em particular pode conscientizar sem humilhar.", positive: true },
-                    D: { text: "Excelente! Apoiar as vítimas e buscar ajuda é sempre a melhor opção.", positive: true }
+                    C: { text: "Boa escolha! Conversar em particular pode conscientizar sem humilhar. +5 pontos! 🎯", positive: true },
+                    D: { text: "Excelente! Apoiar as vítimas e buscar ajuda é sempre a melhor opção. +5 pontos! 🌟", positive: true }
                 },
                 2: {
                     A: { text: "Isso não é normal! Controle excessivo é sinal de relacionamento abusivo.", positive: false },
-                    B: { text: "Correto! É importante esclarecer que amor verdadeiro não controla.", positive: true },
-                    C: { text: "Perfeito! Oferecer apoio e informação sem julgar é fundamental.", positive: true },
+                    B: { text: "Correto! É importante esclarecer que amor verdadeiro não controla. +5 pontos! 💖", positive: true },
+                    C: { text: "Perfeito! Oferecer apoio e informação sem julgar é fundamental. +5 pontos! 🤝", positive: true },
                     D: { text: "Perigoso! Isso pode aumentar a violência. É melhor apoiar a vítima.", positive: false }
                 },
                 3: {
                     A: { text: "Não se envolver pode significar não ajudar alguém que precisa.", positive: false },
                     B: { text: "Perguntar diretamente pode assustar. É melhor demonstrar apoio primeiro.", positive: false },
-                    C: { text: "Excelente! Mostrar apoio cria confiança para a pessoa se abrir.", positive: true },
-                    D: { text: "Muito bom! Um adulto de confiança pode oferecer ajuda profissional.", positive: true }
+                    C: { text: "Excelente! Mostrar apoio cria confiança para a pessoa se abrir. +5 pontos! 💙", positive: true },
+                    D: { text: "Muito bom! Um adulto de confiança pode oferecer ajuda profissional. +5 pontos! 👨‍🏫", positive: true }
                 }
             };
             
@@ -401,38 +633,69 @@
             feedback.className = response.positive ? 'feedback positive' : 'feedback negative';
             feedback.style.display = 'block';
             
-            updateProgress();
+            // Adicionar pontos apenas se acertou e não tinha respondido este cenário antes
+            if (response.positive && !currentUser.completedScenarios.has(scenarioKey)) {
+                currentUser.totalScore += 5;
+                currentUser.scenariosCompleted++;
+                currentUser.completedScenarios.add(scenarioKey);
+                
+                showPointsAnimation('+5 pontos! ⭐');
+                saveUserData();
+                updateAllStats();
+            }
         }
 
-        function updateProgress() {
-            const totalActions = 10; // Quiz + cenários + seções visitadas
-            const completed = userProgress.quizCompleted + userProgress.scenariosExplored;
-            const percentage = Math.min((completed / totalActions) * 100, 100);
+        // Animação de pontos
+        function showPointsAnimation(text) {
+            const animation = document.createElement('div');
+            animation.innerHTML = text;
+            animation.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, #28a745, #20c997);
+                color: white;
+                padding: 20px 30px;
+                border-radius: 15px;
+                font-size: 1.2rem;
+                font-weight: bold;
+                z-index: 10000;
+                box-shadow: 0 10px 30px rgba(40, 167, 69, 0.4);
+                animation: pointsAnimation 2s ease-in-out forwards;
+            `;
             
-            document.getElementById('main-progress').style.width = percentage + '%';
-            document.getElementById('progress-stat').textContent = Math.round(percentage) + '%';
-            document.getElementById('quiz-stat').textContent = userProgress.quizCompleted;
-            document.getElementById('scenario-stat').textContent = userProgress.scenariosExplored;
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes pointsAnimation {
+                    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+                    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+                    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                    100% { opacity: 0; transform: translate(-50%, -60%) scale(0.8); }
+                }
+            `;
+            
+            document.head.appendChild(style);
+            document.body.appendChild(animation);
+            
+            setTimeout(() => {
+                document.body.removeChild(animation);
+                document.head.removeChild(style);
+            }, 2000);
         }
 
-        // Inicializar
+        // Inicialização quando a página carregar
         document.addEventListener('DOMContentLoaded', function() {
-            updateProgress();
+            // Mostrar modal para capturar nome
+            document.getElementById('userModal').style.display = 'flex';
+            
+            // Permitir Enter para enviar nome
+            document.getElementById('userName').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    startApp();
+                }
+            });
         });
-
-        // 🔹 Salvar progresso no navegador
-function saveProgress() {
-    localStorage.setItem("userProgress", JSON.stringify(userProgress));
-}
-
-// 🔹 Carregar progresso salvo
-function loadProgress() {
-    const saved = localStorage.getItem("userProgress");
-    if (saved) {
-        userProgress = JSON.parse(saved);
-    }
-}
-
     </script>
 </body>
 </html>
